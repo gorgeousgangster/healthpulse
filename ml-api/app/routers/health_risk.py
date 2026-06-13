@@ -16,22 +16,8 @@ router = APIRouter()
 def assess_health_risk(
     request: Request,
     profile: HealthProfile,
-    user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     result = assess_risk(profile)
-
-    record = HealthAssessment(
-        user_id=user["sub"],
-        overall_risk=str(result.overall_risk),
-        cardiovascular_risk=str(result.cardiovascular_risk),
-        diabetes_risk=str(result.diabetes_risk),
-        mental_health_risk=str(result.mental_health_risk),
-        risk_level=result.risk_level,
-    )
-    db.add(record)
-    db.commit()
-
     return result
 
 
