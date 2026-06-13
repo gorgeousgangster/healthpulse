@@ -16,7 +16,6 @@ COPY . .
 # Train model at build time so it's baked into the image
 RUN python -m app.services.train_model
 
-ENV PORT=8000
-EXPOSE ${PORT}
+EXPOSE 8080
 
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
