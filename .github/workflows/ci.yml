@@ -1,0 +1,121 @@
+name: CI — Lint & Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: healthpulse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: ml-api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r ml-api/requirements.txt
+
+      - name: Train model
+        working-directory: ml-api
+        run: python -m app.services.train_model
+
+      - name: Run import check
+        working-directory: ml-api
+        env:
+          HEALTHPULSE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/healthpulse_test
+        run: |
+          python -c "
+          from app.main import app
+          from app.db.models import Base
+          from app.auth.jwt_handler import create_access_token, verify_token
+          from app.auth.user_store import hash_password, verify_password
+
+          token = create_access_token('test-id', 'test@example.com')
+          payload = verify_token(token)
+          assert payload['sub'] == 'test-id'
+
+          h = hash_password('testpass123')
+          assert verify_password('testpass123', h)
+          assert not verify_password('wrong', h)
+
+          print('All backend checks passed')
+          "
+
+      - name: Test ML model predictions
+        working-directory: ml-api
+        env:
+          HEALTHPULSE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/healthpulse_test
+        run: |
+          python -c "
+          from app.services.risk_engine import assess_risk
+          from app.models.schemas import HealthProfile
+
+          healthy = HealthProfile(
+              age=30, bmi=22, blood_pressure_systolic=115, blood_pressure_diastolic=75,
+              cholesterol=170, glucose=85, smoking=False, alcohol_weekly_units=2,
+              exercise_hours_weekly=5, sleep_hours_daily=7.5, stress_level=3,
+              family_history_heart_disease=False, family_history_diabetes=False
+          )
+          r = assess_risk(healthy, include_explanation=False)
+          assert r.risk_level in ('low', 'moderate'), f'Expected low/moderate, got {r.risk_level}'
+
+          risky = HealthProfile(
+              age=60, bmi=35, blood_pressure_systolic=160, blood_pressure_diastolic=100,
+              cholesterol=270, glucose=150, smoking=True, alcohol_weekly_units=25,
+              exercise_hours_weekly=0, sleep_hours_daily=5, stress_level=9,
+              family_history_heart_disease=True, family_history_diabetes=True
+          )
+          r2 = assess_risk(risky, include_explanation=False)
+          assert r2.risk_level in ('high', 'critical'), f'Expected high/critical, got {r2.risk_level}'
+
+          print(f'Healthy: {r.overall_risk}% ({r.risk_level})')
+          print(f'At-risk: {r2.overall_risk}% ({r2.risk_level})')
+          print('ML model validation passed')
+          "
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci || npm install
+
+      - name: Type check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: frontend
+        env:
+          NEXTAUTH_SECRET: ci-test-secret-32-characters-ok
+          ML_API_URL: http://localhost:8000
+        run: npm run build

@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: healthpulse
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ml-api:
+    build: ./ml-api
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./ml-api:/app
+    working_dir: /app
+    environment:
+      - HEALTHPULSE_JWT_SECRET_KEY=dev-jwt-secret-change-in-prod
+      - HEALTHPULSE_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/healthpulse
+      - HEALTHPULSE_ALLOWED_ORIGINS=["http://localhost:3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - ML_API_URL=http://ml-api:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev-nextauth-secret-32-characters
+    depends_on:
+      - ml-api
+
+volumes:
+  pgdata:
