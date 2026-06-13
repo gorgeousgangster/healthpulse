@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import HealthForm from './HealthForm';
 import RiskResults from './RiskResults';
+import RadarChartPanel from './RadarChart';
+import ShapChart from './ShapChart';
+import Recommendations from './Recommendations';
 import ErrorState from './ErrorState';
 import { predictRisk } from '../api/client';
 
 export default function Dashboard() {
-  const [state, setState] = useState('idle'); // idle | loading | success | error
+  const [state, setState] = useState('idle');
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
@@ -32,12 +35,11 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Health Risk Dashboard</h1>
         <p className="text-gray-500 mt-2">
-          Get an AI-powered assessment of your cardiovascular, diabetes, and mental health risk
-          with personalized SHAP explanations.
+          AI-powered cardiovascular, diabetes, and mental health risk assessment with SHAP explainability.
         </p>
       </div>
 
@@ -49,13 +51,12 @@ export default function Dashboard() {
         <StatCard icon="shield" label="Explainability" value="SHAP" />
       </div>
 
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* Left: Form */}
         <div className="lg:col-span-3">
           <HealthForm onSubmit={handleAssess} isLoading={state === 'loading'} />
         </div>
 
-        {/* Right: Results */}
         <div className="lg:col-span-2">
           {state === 'idle' && <IdleState />}
           {state === 'loading' && <LoadingState />}
@@ -63,6 +64,31 @@ export default function Dashboard() {
           {state === 'success' && <RiskResults data={results} />}
         </div>
       </div>
+
+      {/* Advanced Analytics — shown after successful assessment */}
+      {state === 'success' && results && (
+        <div className="mt-10 space-y-8">
+          <div className="border-t border-gray-100 pt-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <span className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </span>
+              Advanced Analytics
+            </h2>
+          </div>
+
+          {/* Radar + SHAP side by side on large screens */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <RadarChartPanel profile={lastPayload} />
+            <ShapChart explanation={results.explanation} />
+          </div>
+
+          {/* Recommendations full width */}
+          <Recommendations profile={lastPayload} riskData={results} />
+        </div>
+      )}
     </div>
   );
 }
