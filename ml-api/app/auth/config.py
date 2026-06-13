@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 7
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    allowed_origins: list[str] = ["http://localhost:3000", "https://*.vercel.app", "https://*.up.railway.app"]
     database_url: str = "postgresql://postgres:postgres@localhost:5432/healthpulse"
 
     class Config:

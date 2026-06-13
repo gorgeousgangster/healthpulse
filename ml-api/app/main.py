@@ -61,8 +61,8 @@ app.include_router(model_ops.router, prefix="/api/v1", tags=["Model Operations"]
 
 
 @app.get("/")
-def root():
-    return {"status": "ok"}
+def read_root():
+    return {"message": "Welcome to HealthPulse ML API", "status": "running", "version": "2.0.0"}
 
 
 @app.get("/health")
