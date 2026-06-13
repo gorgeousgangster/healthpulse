@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -18,15 +19,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _load_model_sync():
+    logger.info("Loading ML model in background...")
+    get_model()
+    logger.info("Model ready.")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing database tables...")
     Base.metadata.create_all(bind=engine)
     logger.info("Database ready.")
 
-    logger.info("Loading ML model on startup...")
-    get_model()
-    logger.info("Model ready.")
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _load_model_sync)
     yield
 
 
