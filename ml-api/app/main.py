@@ -19,20 +19,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _load_model_sync():
-    logger.info("Loading ML model in background...")
-    get_model()
-    logger.info("Model ready.")
+def _init_background():
+    try:
+        logger.info("Initializing database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database ready.")
+    except Exception as e:
+        logger.error(f"Database init failed (will retry on first request): {e}")
+
+    try:
+        logger.info("Loading ML model...")
+        get_model()
+        logger.info("Model ready.")
+    except Exception as e:
+        logger.error(f"Model loading failed (will retry on first request): {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing database tables...")
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database ready.")
-
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _load_model_sync)
+    loop.run_in_executor(None, _init_background)
     yield
 
 
