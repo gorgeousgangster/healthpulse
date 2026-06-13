@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useApp } from '../context/AppContext';
 import HealthForm from './HealthForm';
 import RiskResults from './RiskResults';
 import RadarChartPanel from './RadarChart';
@@ -8,6 +9,7 @@ import ErrorState from './ErrorState';
 import { predictRisk } from '../api/client';
 
 export default function Dashboard() {
+  const { t } = useApp();
   const [state, setState] = useState('idle');
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -23,7 +25,7 @@ export default function Dashboard() {
       setResults(data);
       setState('success');
     } catch (err) {
-      const message = err.response?.data?.detail || err.message || 'Failed to connect to the health analysis service.';
+      const message = err.response?.data?.detail || err.message || t('error.default');
       setError(message);
       setState('error');
     }
@@ -35,28 +37,22 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Hero */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Health Risk Dashboard</h1>
-        <p className="text-gray-500 mt-2">
-          AI-powered cardiovascular, diabetes, and mental health risk assessment with SHAP explainability.
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('hero.title')}</h1>
+        <p className="text-gray-500 mt-2">{t('hero.subtitle')}</p>
       </div>
 
-      {/* Stats Banner */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon="heart" label="Risk Dimensions" value="3" />
-        <StatCard icon="brain" label="ML Features" value="13" />
-        <StatCard icon="chart" label="Training Data" value="20K+" />
-        <StatCard icon="shield" label="Explainability" value="SHAP" />
+        <StatCard icon="heart" label={t('stats.dimensions')} value="3" />
+        <StatCard icon="brain" label={t('stats.features')} value="13" />
+        <StatCard icon="chart" label={t('stats.training')} value="20K+" />
+        <StatCard icon="shield" label={t('stats.explainability')} value="SHAP" />
       </div>
 
-      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3">
           <HealthForm onSubmit={handleAssess} isLoading={state === 'loading'} />
         </div>
-
         <div className="lg:col-span-2">
           {state === 'idle' && <IdleState />}
           {state === 'loading' && <LoadingState />}
@@ -65,7 +61,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Advanced Analytics — shown after successful assessment */}
       {state === 'success' && results && (
         <div className="mt-10 space-y-8">
           <div className="border-t border-gray-100 pt-8">
@@ -75,17 +70,13 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </span>
-              Advanced Analytics
+              {t('analytics.title')}
             </h2>
           </div>
-
-          {/* Radar + SHAP side by side on large screens */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <RadarChartPanel profile={lastPayload} />
             <ShapChart explanation={results.explanation} />
           </div>
-
-          {/* Recommendations full width */}
           <Recommendations profile={lastPayload} riskData={results} />
         </div>
       )}
@@ -94,6 +85,7 @@ export default function Dashboard() {
 }
 
 function IdleState() {
+  const { t } = useApp();
   return (
     <div className="card border-dashed border-2 border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
@@ -102,21 +94,22 @@ function IdleState() {
             d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-1">Ready for Assessment</h3>
-      <p className="text-xs text-gray-400 max-w-48">Fill in your health profile and click "Assess My Risk" to get started</p>
+      <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('idle.title')}</h3>
+      <p className="text-xs text-gray-400 max-w-48">{t('idle.subtitle')}</p>
     </div>
   );
 }
 
 function LoadingState() {
+  const { t } = useApp();
   return (
     <div className="card flex flex-col items-center justify-center py-16 text-center">
       <div className="relative mb-4">
         <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
       </div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-1">Analyzing Your Profile</h3>
-      <p className="text-xs text-gray-400">Running ML model & SHAP explainability...</p>
+      <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('loading.title')}</h3>
+      <p className="text-xs text-gray-400">{t('loading.subtitle')}</p>
     </div>
   );
 }
@@ -132,9 +125,7 @@ function StatCard({ icon, label, value }) {
   return (
     <div className="card flex items-center gap-3 p-4">
       <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-        <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          {icons[icon]}
-        </svg>
+        <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icons[icon]}</svg>
       </div>
       <div>
         <p className="text-lg font-bold text-gray-900 leading-tight">{value}</p>

@@ -8,13 +8,26 @@ const client = axios.create({
   timeout: 30000,
 });
 
+function getToken() {
+  return localStorage.getItem('hp_token');
+}
+
+function authHeaders() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function predictRisk(profileData) {
-  const response = await client.post('/api/v1/assess-risk', profileData);
+  const response = await client.post('/api/v1/assess-risk', profileData, {
+    headers: authHeaders(),
+  });
   return response.data;
 }
 
 export async function getRecommendations(profileData) {
-  const response = await client.post('/api/v1/recommendations', profileData);
+  const response = await client.post('/api/v1/recommendations', profileData, {
+    headers: authHeaders(),
+  });
   return response.data;
 }
 

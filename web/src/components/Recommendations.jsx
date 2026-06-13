@@ -1,3 +1,5 @@
+import { useApp } from '../context/AppContext';
+
 const THRESHOLDS = {
   bmi: { good: 25, warn: 30 },
   blood_pressure_systolic: { good: 120, warn: 140 },
@@ -10,31 +12,7 @@ const THRESHOLDS = {
   alcohol_weekly_units: { good: 7, warn: 14 },
 };
 
-const ADVICE = {
-  bmi: { critical: 'Consult a physician about weight management strategies', improvement: 'Aim for a BMI under 25 through balanced nutrition', positive: 'Your BMI is in a healthy range — great job maintaining it' },
-  blood_pressure_systolic: { critical: 'High blood pressure requires immediate medical attention', improvement: 'Reduce sodium intake and increase potassium-rich foods', positive: 'Blood pressure is within the normal healthy range' },
-  blood_pressure_diastolic: { critical: 'Diastolic hypertension detected — consult your doctor', improvement: 'Regular cardio exercise can help lower diastolic pressure', positive: 'Diastolic blood pressure is well controlled' },
-  cholesterol: { critical: 'Very high cholesterol — discuss statins with your doctor', improvement: 'Increase fiber and omega-3 fatty acids in your diet', positive: 'Cholesterol levels are within healthy bounds' },
-  glucose: { critical: 'Blood glucose in diabetic range — seek medical evaluation', improvement: 'Reduce refined carbs and increase whole grains', positive: 'Blood glucose is well-regulated' },
-  stress_level: { critical: 'Extreme stress is impacting your health significantly', improvement: 'Try mindfulness, meditation, or regular breaks', positive: 'Stress levels are well-managed' },
-  exercise_hours_weekly: { critical: 'Sedentary lifestyle is a major health risk factor', improvement: 'Aim for at least 150 minutes of activity per week', positive: 'Excellent activity level — keep it up!' },
-  sleep_hours_daily: { critical: 'Severe sleep deprivation — prioritize sleep hygiene', improvement: 'Target 7-9 hours of quality sleep nightly', positive: 'Getting adequate sleep — supports recovery and focus' },
-  alcohol_weekly_units: { critical: 'Alcohol intake is dangerously high — consider support', improvement: 'Try to stay under 14 units per week', positive: 'Alcohol consumption is within safe limits' },
-};
-
-const LABELS = {
-  bmi: 'Body Mass Index',
-  blood_pressure_systolic: 'Blood Pressure',
-  blood_pressure_diastolic: 'Diastolic BP',
-  cholesterol: 'Cholesterol',
-  glucose: 'Blood Glucose',
-  stress_level: 'Stress Management',
-  exercise_hours_weekly: 'Physical Activity',
-  sleep_hours_daily: 'Sleep Quality',
-  alcohol_weekly_units: 'Alcohol Intake',
-};
-
-function categorize(profile) {
+function categorize(profile, t) {
   const critical = [];
   const improvement = [];
   const positive = [];
@@ -43,8 +21,8 @@ function categorize(profile) {
     const value = profile[key];
     if (value === undefined || value === null) continue;
 
-    const label = LABELS[key];
-    const advice = ADVICE[key];
+    const label = t(`recommendations.labels.${key}`);
+    const advice = t(`recommendations.advice.${key}`);
 
     if (threshold.inverted) {
       if (value < threshold.warn) critical.push({ label, advice: advice.critical, value });
@@ -61,9 +39,11 @@ function categorize(profile) {
 }
 
 export default function Recommendations({ profile, riskData }) {
+  const { t } = useApp();
+
   if (!profile || !riskData) return null;
 
-  const { critical, improvement, positive } = categorize(profile);
+  const { critical, improvement, positive } = categorize(profile, t);
 
   return (
     <div className="card">
@@ -71,20 +51,14 @@ export default function Recommendations({ profile, riskData }) {
         <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
-        Personalized Health Recommendations
+        {t('recommendations.title')}
       </h3>
-      <p className="text-xs text-gray-400 mb-5">Based on your health profile and risk assessment</p>
+      <p className="text-xs text-gray-400 mb-5">{t('recommendations.subtitle')}</p>
 
       <div className="space-y-4">
-        {critical.length > 0 && (
-          <Section title="Needs Attention" color="red" items={critical} icon="!" />
-        )}
-        {improvement.length > 0 && (
-          <Section title="Room for Improvement" color="amber" items={improvement} icon="↑" />
-        )}
-        {positive.length > 0 && (
-          <Section title="Keep It Up" color="emerald" items={positive} icon="✓" />
-        )}
+        {critical.length > 0 && <Section title={t('recommendations.critical')} color="red" items={critical} icon="!" />}
+        {improvement.length > 0 && <Section title={t('recommendations.improvement')} color="amber" items={improvement} icon="↑" />}
+        {positive.length > 0 && <Section title={t('recommendations.positive')} color="emerald" items={positive} icon="✓" />}
       </div>
     </div>
   );

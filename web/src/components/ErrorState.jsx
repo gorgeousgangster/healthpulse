@@ -1,4 +1,8 @@
+import { useApp } from '../context/AppContext';
+
 export default function ErrorState({ message, onRetry }) {
+  const { t } = useApp();
+
   return (
     <div className="card border-red-100 bg-red-50/50">
       <div className="flex items-start gap-4">
@@ -9,11 +13,11 @@ export default function ErrorState({ message, onRetry }) {
           </svg>
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-red-800">Analysis Failed</h3>
-          <p className="text-sm text-red-600 mt-1">{message || 'Something went wrong. Please check your connection and try again.'}</p>
+          <h3 className="text-sm font-semibold text-red-800">{t('error.title')}</h3>
+          <p className="text-sm text-red-600 mt-1">{message || t('error.default')}</p>
           {onRetry && (
             <button onClick={onRetry} className="mt-3 text-sm font-medium text-red-700 hover:text-red-800 underline">
-              Try again
+              {t('error.retry')}
             </button>
           )}
         </div>
