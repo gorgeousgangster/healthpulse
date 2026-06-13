@@ -102,7 +102,7 @@ function ExplanationPanel({ explanation }) {
           <div className="space-y-1.5">
             {target.features?.slice(0, 5).map((feat, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 w-32 truncate">{feat.feature}</span>
+                <span className="text-xs text-gray-600 w-32 truncate">{feat.display_name || feat.name}</span>
                 <div className="flex-1 flex items-center">
                   <div className="relative flex-1 h-4 flex items-center">
                     <div className="absolute inset-0 flex items-center">
@@ -111,7 +111,7 @@ function ExplanationPanel({ explanation }) {
                     <div
                       className={`absolute h-3 rounded-sm ${feat.direction === 'risk' ? 'bg-red-400' : 'bg-emerald-400'}`}
                       style={{
-                        width: `${Math.min(Math.abs(feat.contribution) * 300, 50)}%`,
+                        width: `${Math.min(Math.abs(feat.shap_value) * 300, 50)}%`,
                         left: feat.direction === 'risk' ? '50%' : undefined,
                         right: feat.direction !== 'risk' ? '50%' : undefined,
                       }}
@@ -119,7 +119,7 @@ function ExplanationPanel({ explanation }) {
                   </div>
                 </div>
                 <span className={`text-xs font-medium w-14 text-right ${feat.direction === 'risk' ? 'text-red-600' : 'text-emerald-600'}`}>
-                  {feat.direction === 'risk' ? '+' : '-'}{Math.abs(feat.contribution).toFixed(2)}
+                  {feat.direction === 'risk' ? '+' : '-'}{Math.abs(feat.shap_value).toFixed(2)}
                 </span>
               </div>
             ))}
