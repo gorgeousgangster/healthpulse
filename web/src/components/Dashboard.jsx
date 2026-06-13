@@ -1,12 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import HealthForm from './HealthForm';
 import RiskResults from './RiskResults';
 import RadarChartPanel from './RadarChart';
 import ShapChart from './ShapChart';
 import Recommendations from './Recommendations';
+import HistoryPanel from './HistoryPanel';
 import ErrorState from './ErrorState';
 import { predictRisk } from '../api/client';
+
+const HISTORY_KEY = 'healthpulse_history';
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveHistory(history) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
 
 export default function Dashboard() {
   const { t } = useApp();
@@ -14,6 +27,10 @@ export default function Dashboard() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
+  const [history, setHistory] = useState(loadHistory);
+  const [activeRecord, setActiveRecord] = useState(null);
+
+  useEffect(() => { saveHistory(history); }, [history]);
 
   async function handleAssess(payload) {
     setState('loading');
@@ -24,6 +41,16 @@ export default function Dashboard() {
       const data = await predictRisk(payload);
       setResults(data);
       setState('success');
+
+      const record = {
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        payload,
+        results: data,
+        overall_risk: data.overall_risk_score ?? Math.round((data.risk_scores?.cardiovascular + data.risk_scores?.diabetes + data.risk_scores?.mental_health) / 3),
+        risk_level: getRiskLevel(data.overall_risk_score ?? Math.round((data.risk_scores?.cardiovascular + data.risk_scores?.diabetes + data.risk_scores?.mental_health) / 3)),
+      };
+      setHistory(prev => [record, ...prev].slice(0, 20));
     } catch (err) {
       const message = err.response?.data?.detail || err.message || t('error.default');
       setError(message);
@@ -34,6 +61,22 @@ export default function Dashboard() {
   function handleRetry() {
     if (lastPayload) handleAssess(lastPayload);
   }
+
+  function handleSelectRecord(record) {
+    setActiveRecord(record);
+    setLastPayload(record.payload);
+    setResults(record.results);
+    setState('success');
+    setError(null);
+  }
+
+  function handleClearHistory() {
+    setActiveRecord(null);
+  }
+
+  const displayPayload = activeRecord ? activeRecord.payload : lastPayload;
+  const displayResults = activeRecord ? activeRecord.results : results;
+  const showResults = state === 'success' && displayResults;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -51,17 +94,27 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3">
-          <HealthForm onSubmit={handleAssess} isLoading={state === 'loading'} />
+          <HealthForm
+            onSubmit={handleAssess}
+            isLoading={state === 'loading'}
+            historicalData={activeRecord ? activeRecord.payload : null}
+            onClearHistory={handleClearHistory}
+          />
         </div>
-        <div className="lg:col-span-2">
-          {state === 'idle' && <IdleState />}
+        <div className="lg:col-span-2 space-y-6">
+          {state === 'idle' && !activeRecord && <IdleState />}
           {state === 'loading' && <LoadingState />}
           {state === 'error' && <ErrorState message={error} onRetry={handleRetry} />}
-          {state === 'success' && <RiskResults data={results} />}
+          {showResults && <RiskResults data={displayResults} />}
+          <HistoryPanel
+            history={history}
+            activeId={activeRecord?.id}
+            onSelect={handleSelectRecord}
+          />
         </div>
       </div>
 
-      {state === 'success' && results && (
+      {showResults && displayPayload && (
         <div className="mt-10 space-y-8">
           <div className="border-t border-gray-100 pt-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -74,14 +127,21 @@ export default function Dashboard() {
             </h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <RadarChartPanel profile={lastPayload} />
-            <ShapChart explanation={results.explanation} />
+            <RadarChartPanel profile={displayPayload} />
+            <ShapChart explanation={displayResults.explanation} />
           </div>
-          <Recommendations profile={lastPayload} riskData={results} />
+          <Recommendations profile={displayPayload} riskData={displayResults} />
         </div>
       )}
     </div>
   );
+}
+
+function getRiskLevel(score) {
+  if (score >= 75) return 'critical';
+  if (score >= 50) return 'high';
+  if (score >= 25) return 'moderate';
+  return 'low';
 }
 
 function IdleState() {

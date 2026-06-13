@@ -57,6 +57,12 @@ export const translations = {
       signUp: 'Sign up', signIn: 'Sign in',
       error: 'Invalid credentials. Please try again.',
     },
+    history: {
+      title: 'Assessment History', subtitle: 'Click a record to view past results',
+      record: 'Assessment on', noHistory: 'No assessments yet. Complete your first assessment above.',
+      viewingPast: 'Viewing Past Record', backToCurrent: 'Back to Current',
+      riskScore: 'Risk Score',
+    },
     footer: 'HealthPulse AI — Powered by scikit-learn, SHAP, and Framingham Heart Study data. For educational purposes only. Not a substitute for medical advice.',
   },
   vi: {
@@ -107,6 +113,12 @@ export const translations = {
         cholesterol: 'Cholesterol', glucose: 'Đường huyết', stress_level: 'Quản lý căng thẳng',
         exercise_hours_weekly: 'Hoạt động thể chất', sleep_hours_daily: 'Chất lượng giấc ngủ', alcohol_weekly_units: 'Tiêu thụ rượu',
       },
+    },
+    history: {
+      title: 'Lịch Sử Đánh Giá', subtitle: 'Nhấn vào bản ghi để xem kết quả trước đó',
+      record: 'Lần kiểm tra ngày', noHistory: 'Chưa có đánh giá nào. Hoàn thành đánh giá đầu tiên ở trên.',
+      viewingPast: 'Đang Xem Bản Ghi Cũ', backToCurrent: 'Quay lại',
+      riskScore: 'Điểm rủi ro',
     },
     auth: {
       loginTitle: 'Chào Mừng Trở Lại', loginSubtitle: 'Đăng nhập để truy cập bảng điều khiển sức khỏe',
