@@ -17,7 +17,9 @@ jobs:
         working-directory: ml-api
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service healthpulse-api
+        run: |
+          railway link --environment production 2>/dev/null || true
+          railway up --service healthpulse-api
 
   deploy-frontend:
     runs-on: ubuntu-latest
