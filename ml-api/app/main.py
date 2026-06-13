@@ -54,6 +54,11 @@ app.include_router(recommendations.router, prefix="/api/v1", tags=["Recommendati
 app.include_router(model_ops.router, prefix="/api/v1", tags=["Model Operations"])
 
 
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "healthpulse-ml", "version": "2.0.0"}
