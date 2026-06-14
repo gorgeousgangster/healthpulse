@@ -41,6 +41,22 @@ export const translations = {
     analytics: { title: 'Advanced Analytics' },
     radar: { title: 'Health Metrics vs. Healthy Baseline', subtitle: 'Normalized comparison — lower is better for most metrics', you: 'You', healthy: 'Healthy' },
     shapChart: { title: 'SHAP Feature Impact Analysis', subtitle: 'How each factor shifts your risk — red increases risk, green is protective', risk: 'Risk' },
+    charts: {
+      bp: { title: 'Blood Pressure Zone', subtitle: 'Where your reading falls on the clinical scale', systolic: 'Systolic', diastolic: 'Diastolic' },
+      bmi: { title: 'BMI Category', subtitle: 'Body Mass Index classification based on WHO standards' },
+      lifestyle: { title: 'Lifestyle Balance', subtitle: 'Behavioral health metrics scored 0-100%', overall: 'overall score', you: 'You', ideal: 'Ideal', sleep: 'Sleep', exercise: 'Exercise', stress: 'Low Stress', alcohol: 'Low Alcohol' },
+    },
+    shap: {
+      explainer: {
+        title: 'How to read your AI analysis',
+        greenLabel: 'Green bars (− values):',
+        greenText: 'Protective factors. These metrics are currently lowering your risk score compared to the general population.',
+        redLabel: 'Red bars (+ values):',
+        redText: 'Risk drivers. These metrics are actively pushing your risk score higher.',
+        numbersLabel: 'The numbers:',
+        numbersText: 'Represent the magnitude of impact. Larger numbers mean that specific health metric played a bigger role in the AI\'s final decision.',
+      },
+    },
     recommendations: {
       title: 'Personalized Health Recommendations',
       subtitle: 'Based on your health profile and risk assessment',
@@ -121,6 +137,22 @@ export const translations = {
     analytics: { title: 'Phân Tích Nâng Cao' },
     radar: { title: 'Chỉ Số Sức Khỏe vs. Mức Chuẩn', subtitle: 'So sánh chuẩn hóa — thấp hơn thường tốt hơn', you: 'Bạn', healthy: 'Khỏe mạnh' },
     shapChart: { title: 'Phân Tích Tác Động SHAP', subtitle: 'Mỗi yếu tố ảnh hưởng rủi ro thế nào — đỏ tăng rủi ro, xanh bảo vệ', risk: 'Rủi ro' },
+    charts: {
+      bp: { title: 'Vùng Huyết Áp', subtitle: 'Chỉ số của bạn nằm ở đâu trên thang lâm sàng', systolic: 'Tâm thu', diastolic: 'Tâm trương' },
+      bmi: { title: 'Phân Loại BMI', subtitle: 'Phân loại chỉ số khối cơ thể theo tiêu chuẩn WHO' },
+      lifestyle: { title: 'Cân Bằng Lối Sống', subtitle: 'Chỉ số hành vi sức khỏe tính theo thang 0-100%', overall: 'điểm tổng', you: 'Bạn', ideal: 'Lý tưởng', sleep: 'Giấc ngủ', exercise: 'Vận động', stress: 'Ít căng thẳng', alcohol: 'Ít rượu bia' },
+    },
+    shap: {
+      explainer: {
+        title: 'Cách đọc phân tích AI của bạn',
+        greenLabel: 'Thanh xanh (− giá trị):',
+        greenText: 'Yếu tố bảo vệ. Các chỉ số này đang giảm điểm rủi ro của bạn so với dân số chung.',
+        redLabel: 'Thanh đỏ (+ giá trị):',
+        redText: 'Yếu tố rủi ro. Các chỉ số này đang đẩy điểm rủi ro của bạn lên cao hơn.',
+        numbersLabel: 'Các con số:',
+        numbersText: 'Thể hiện mức độ ảnh hưởng. Số càng lớn nghĩa là chỉ số sức khỏe đó đóng vai trò càng quan trọng trong quyết định cuối cùng của AI.',
+      },
+    },
     recommendations: {
       title: 'Khuyến Nghị Sức Khỏe Cá Nhân',
       subtitle: 'Dựa trên hồ sơ sức khỏe và kết quả đánh giá',
