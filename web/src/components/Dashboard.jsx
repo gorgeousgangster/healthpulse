@@ -7,19 +7,7 @@ import ShapChart from './ShapChart';
 import Recommendations from './Recommendations';
 import HistoryPanel from './HistoryPanel';
 import ErrorState from './ErrorState';
-import { predictRisk } from '../api/client';
-
-const HISTORY_KEY = 'healthpulse_history';
-
-function loadHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  } catch { return []; }
-}
-
-function saveHistory(history) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-}
+import { predictRisk, fetchHistory } from '../api/client';
 
 export default function Dashboard() {
   const { t } = useApp();
@@ -27,10 +15,14 @@ export default function Dashboard() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
-  const [history, setHistory] = useState(loadHistory);
+  const [history, setHistory] = useState([]);
   const [activeRecord, setActiveRecord] = useState(null);
 
-  useEffect(() => { saveHistory(history); }, [history]);
+  useEffect(() => {
+    fetchHistory()
+      .then(setHistory)
+      .catch(() => {});
+  }, []);
 
   async function handleAssess(payload) {
     setState('loading');
@@ -42,15 +34,9 @@ export default function Dashboard() {
       setResults(data);
       setState('success');
 
-      const record = {
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        payload,
-        results: data,
-        overall_risk: data.overall_risk_score ?? Math.round((data.risk_scores?.cardiovascular + data.risk_scores?.diabetes + data.risk_scores?.mental_health) / 3),
-        risk_level: getRiskLevel(data.overall_risk_score ?? Math.round((data.risk_scores?.cardiovascular + data.risk_scores?.diabetes + data.risk_scores?.mental_health) / 3)),
-      };
-      setHistory(prev => [record, ...prev].slice(0, 20));
+      fetchHistory()
+        .then(setHistory)
+        .catch(() => {});
     } catch (err) {
       const message = err.response?.data?.detail || err.message || t('error.default');
       setError(message);
@@ -65,7 +51,13 @@ export default function Dashboard() {
   function handleSelectRecord(record) {
     setActiveRecord(record);
     setLastPayload(record.payload);
-    setResults(record.results);
+    setResults({
+      overall_risk: record.overall_risk,
+      cardiovascular_risk: record.cardiovascular_risk,
+      diabetes_risk: record.diabetes_risk,
+      mental_health_risk: record.mental_health_risk,
+      risk_level: record.risk_level,
+    });
     setState('success');
     setError(null);
   }
@@ -76,7 +68,7 @@ export default function Dashboard() {
 
   const displayPayload = activeRecord ? activeRecord.payload : lastPayload;
   const displayResults = activeRecord ? activeRecord.results : results;
-  const showResults = state === 'success' && displayResults;
+  const showResults = state === 'success' && (activeRecord || displayResults);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -128,7 +120,7 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <RadarChartPanel profile={displayPayload} />
-            <ShapChart explanation={displayResults.explanation} />
+            {displayResults.explanation && <ShapChart explanation={displayResults.explanation} />}
           </div>
           <Recommendations profile={displayPayload} riskData={displayResults} />
         </div>
@@ -137,12 +129,6 @@ export default function Dashboard() {
   );
 }
 
-function getRiskLevel(score) {
-  if (score >= 75) return 'critical';
-  if (score >= 50) return 'high';
-  if (score >= 25) return 'moderate';
-  return 'low';
-}
 
 function IdleState() {
   const { t } = useApp();

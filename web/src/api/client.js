@@ -31,6 +31,13 @@ export async function getRecommendations(profileData) {
   return response.data;
 }
 
+export async function fetchHistory() {
+  const response = await client.get('/api/v1/assessments/history', {
+    headers: authHeaders(),
+  });
+  return response.data;
+}
+
 export async function healthCheck() {
   const response = await client.get('/health');
   return response.data;

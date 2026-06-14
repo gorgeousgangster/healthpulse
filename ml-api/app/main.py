@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 def _init_background():
     try:
         logger.info("Initializing database tables...")
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        if "health_assessments" in inspector.get_table_names():
+            columns = {c["name"] for c in inspector.get_columns("health_assessments")}
+            if "age" not in columns:
+                logger.info("Migrating health_assessments table (adding input columns)...")
+                with engine.begin() as conn:
+                    conn.execute(text("DROP TABLE health_assessments"))
         Base.metadata.create_all(bind=engine)
         logger.info("Database ready.")
     except Exception as e:
