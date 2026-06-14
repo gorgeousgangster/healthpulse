@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import Navbar from './Navbar';
 import HealthForm from './HealthForm';
 import RiskResults from './RiskResults';
 import RadarChartPanel from './RadarChart';
 import ShapChart from './ShapChart';
 import Recommendations from './Recommendations';
-import HistoryPanel from './HistoryPanel';
+import HistoryModal from './HistoryModal';
 import ErrorState from './ErrorState';
 import { predictRisk, fetchHistory } from '../api/client';
 
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
   const [history, setHistory] = useState([]);
-  const [activeRecord, setActiveRecord] = useState(null);
+  const [modalRecord, setModalRecord] = useState(null);
 
   useEffect(() => {
     fetchHistory()
@@ -48,87 +49,60 @@ export default function Dashboard() {
     if (lastPayload) handleAssess(lastPayload);
   }
 
-  function handleSelectRecord(record) {
-    setActiveRecord(record);
-    setLastPayload(record.payload);
-    setResults({
-      overall_risk: record.overall_risk,
-      cardiovascular_risk: record.cardiovascular_risk,
-      diabetes_risk: record.diabetes_risk,
-      mental_health_risk: record.mental_health_risk,
-      risk_level: record.risk_level,
-    });
-    setState('success');
-    setError(null);
-  }
-
-  function handleClearHistory() {
-    setActiveRecord(null);
-  }
-
-  const displayPayload = activeRecord ? activeRecord.payload : lastPayload;
-  const displayResults = activeRecord ? activeRecord.results : results;
-  const showResults = state === 'success' && (activeRecord || displayResults);
-
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{t('hero.title')}</h1>
-        <p className="text-gray-500 mt-2">{t('hero.subtitle')}</p>
-      </div>
+    <>
+      <Navbar history={history} onSelectRecord={setModalRecord} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon="heart" label={t('stats.dimensions')} value="3" />
-        <StatCard icon="brain" label={t('stats.features')} value="13" />
-        <StatCard icon="chart" label={t('stats.training')} value="20K+" />
-        <StatCard icon="shield" label={t('stats.explainability')} value="SHAP" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3">
-          <HealthForm
-            onSubmit={handleAssess}
-            isLoading={state === 'loading'}
-            historicalData={activeRecord ? activeRecord.payload : null}
-            onClearHistory={handleClearHistory}
-          />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">{t('hero.title')}</h1>
+          <p className="text-gray-500 mt-2">{t('hero.subtitle')}</p>
         </div>
-        <div className="lg:col-span-2 space-y-6">
-          {state === 'idle' && !activeRecord && <IdleState />}
-          {state === 'loading' && <LoadingState />}
-          {state === 'error' && <ErrorState message={error} onRetry={handleRetry} />}
-          {showResults && <RiskResults data={displayResults} />}
-          <HistoryPanel
-            history={history}
-            activeId={activeRecord?.id}
-            onSelect={handleSelectRecord}
-          />
-        </div>
-      </div>
 
-      {showResults && displayPayload && (
-        <div className="mt-10 space-y-8">
-          <div className="border-t border-gray-100 pt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </span>
-              {t('analytics.title')}
-            </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard icon="heart" label={t('stats.dimensions')} value="3" />
+          <StatCard icon="brain" label={t('stats.features')} value="13" />
+          <StatCard icon="chart" label={t('stats.training')} value="20K+" />
+          <StatCard icon="shield" label={t('stats.explainability')} value="SHAP" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3">
+            <HealthForm onSubmit={handleAssess} isLoading={state === 'loading'} />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <RadarChartPanel profile={displayPayload} />
-            {displayResults.explanation && <ShapChart explanation={displayResults.explanation} />}
+          <div className="lg:col-span-2 space-y-6">
+            {state === 'idle' && <IdleState />}
+            {state === 'loading' && <LoadingState />}
+            {state === 'error' && <ErrorState message={error} onRetry={handleRetry} />}
+            {state === 'success' && results && <RiskResults data={results} />}
           </div>
-          <Recommendations profile={displayPayload} riskData={displayResults} />
         </div>
-      )}
-    </div>
+
+        {state === 'success' && results && lastPayload && (
+          <div className="mt-10 space-y-8">
+            <div className="border-t border-gray-100 pt-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <span className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </span>
+                {t('analytics.title')}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <RadarChartPanel profile={lastPayload} />
+              {results.explanation && <ShapChart explanation={results.explanation} />}
+            </div>
+            <Recommendations profile={lastPayload} riskData={results} />
+          </div>
+        )}
+      </div>
+
+      {modalRecord && <HistoryModal record={modalRecord} onClose={() => setModalRecord(null)} />}
+    </>
   );
 }
-
 
 function IdleState() {
   const { t } = useApp();
