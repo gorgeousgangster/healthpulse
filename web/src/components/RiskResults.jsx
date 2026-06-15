@@ -1,3 +1,4 @@
+import { useApp } from '../context/AppContext';
 import { ShapTableExplainer as ShapTableExplainerCard } from './ShapExplainer';
 
 const LEVEL_CONFIG = {
@@ -8,6 +9,8 @@ const LEVEL_CONFIG = {
 };
 
 export default function RiskResults({ data }) {
+  const { t } = useApp();
+
   if (!data) return null;
 
   const config = LEVEL_CONFIG[data.risk_level] || LEVEL_CONFIG.moderate;
@@ -16,7 +19,7 @@ export default function RiskResults({ data }) {
     <div className="space-y-6">
       <div className={`card ${config.bg} border-0`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Risk Assessment</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('results.title')}</h2>
           <span className={`px-3 py-1 rounded-full text-sm font-semibold capitalize ${config.bg} ${config.text} ring-1 ${config.ring}`}>
             {data.risk_level}
           </span>
@@ -39,11 +42,11 @@ export default function RiskResults({ data }) {
             </div>
           </div>
           <div className="flex-1">
-            <p className="text-sm text-gray-600 mb-3">Overall health risk score based on your profile</p>
+            <p className="text-sm text-gray-600 mb-3">{t('results.overall')}</p>
             <div className="space-y-2">
-              <RiskBar label="Cardiovascular" value={data.cardiovascular_risk} />
-              <RiskBar label="Diabetes" value={data.diabetes_risk} />
-              <RiskBar label="Mental Health" value={data.mental_health_risk} />
+              <RiskBar label={t('results.cardiovascular')} value={data.cardiovascular_risk} />
+              <RiskBar label={t('results.diabetes')} value={data.diabetes_risk} />
+              <RiskBar label={t('results.mentalHealth')} value={data.mental_health_risk} />
             </div>
           </div>
         </div>
@@ -55,7 +58,7 @@ export default function RiskResults({ data }) {
             <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Contributing Factors
+            {t('results.factors')}
           </h3>
           <ul className="space-y-2">
             {data.contributing_factors.map((factor, i) => (
@@ -92,8 +95,15 @@ function RiskBar({ label, value }) {
 }
 
 function ExplanationPanel({ explanation }) {
+  const { t } = useApp();
   const targets = Object.entries(explanation).filter(([_, v]) => v);
   if (targets.length === 0) return null;
+
+  const dimensionLabels = {
+    cardiovascular: t('results.cardiovascular'),
+    diabetes: t('results.diabetes'),
+    mental_health: t('results.mentalHealth'),
+  };
 
   return (
     <div className="card">
@@ -101,38 +111,36 @@ function ExplanationPanel({ explanation }) {
         <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
-        SHAP Explainability
+        {t('results.shap')}
       </h3>
-      {targets.map(([key, target]) => (
-        <div key={key} className="mb-4 last:mb-0">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{key.replace('_', ' ')}</p>
-          <div className="space-y-1.5">
-            {target.features?.filter(f => f.shap_value !== 0).map((feat, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 w-32 truncate">{feat.display_name || feat.name}</span>
-                <div className="flex-1 flex items-center">
-                  <div className="relative flex-1 h-4 flex items-center">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full h-px bg-gray-200"></div>
-                    </div>
-                    <div
-                      className={`absolute h-3 rounded-sm ${feat.direction === 'risk' ? 'bg-red-400' : 'bg-emerald-400'}`}
-                      style={{
-                        width: `${Math.min(Math.abs(feat.shap_value) * 300, 50)}%`,
-                        left: feat.direction === 'risk' ? '50%' : undefined,
-                        right: feat.direction !== 'risk' ? '50%' : undefined,
-                      }}
-                    />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {targets.map(([key, target]) => (
+          <div key={key} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${key === 'cardiovascular' ? 'bg-red-400' : key === 'diabetes' ? 'bg-amber-400' : 'bg-blue-400'}`} />
+              {dimensionLabels[key] || key.replace('_', ' ')}
+            </p>
+            <div className="space-y-2">
+              {target.features?.filter(f => f.shap_value !== 0).sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value)).map((feat, i) => {
+                const featureName = t(`featureNames.${feat.name}`) !== `featureNames.${feat.name}` ? t(`featureNames.${feat.name}`) : (feat.display_name || feat.name);
+                return (
+                  <div key={i} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600 truncate flex-1">{featureName}</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      feat.direction === 'risk'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {feat.direction === 'risk' ? '+' : '−'}{Math.abs(feat.shap_value).toFixed(2)}
+                    </span>
                   </div>
-                </div>
-                <span className={`text-xs font-medium w-14 text-right ${feat.direction === 'risk' ? 'text-red-600' : 'text-emerald-600'}`}>
-                  {feat.direction === 'risk' ? '+' : '-'}{Math.abs(feat.shap_value).toFixed(2)}
-                </span>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
