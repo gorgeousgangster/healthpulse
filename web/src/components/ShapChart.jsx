@@ -30,15 +30,16 @@ export default function ShapChart({ explanation }) {
 
 function ShapDimension({ title, target, riskLabel }) {
   const data = target.features
-    .slice(0, 8)
+    .filter(f => f.shap_value !== 0)
     .map(f => ({
       name: f.display_name || f.name,
       value: f.direction === 'risk' ? Math.abs(f.shap_value) : -Math.abs(f.shap_value),
       direction: f.direction,
     }))
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
 
   const maxVal = Math.max(...data.map(d => Math.abs(d.value)), 0.01);
+  const chartHeight = Math.max(data.length * 32, 120);
 
   return (
     <div>
@@ -46,12 +47,12 @@ function ShapDimension({ title, target, riskLabel }) {
         <span className={`w-2 h-2 rounded-full ${title === 'cardiovascular' ? 'bg-red-400' : title === 'diabetes' ? 'bg-amber-400' : 'bg-blue-400'}`}></span>
         {title.replace('_', ' ')} {riskLabel}
       </p>
-      <div className="w-full h-48">
+      <div className="w-full" style={{ height: `${chartHeight}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 100 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
             <XAxis type="number" domain={[-maxVal * 1.2, maxVal * 1.2]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={v => v.toFixed(2)} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#4b5563' }} width={95} />
+            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#4b5563' }} width={95} interval={0} />
             <Tooltip formatter={(value) => [`${value > 0 ? '+' : ''}${value.toFixed(3)}`, 'SHAP']} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '12px' }} />
             <ReferenceLine x={0} stroke="#d1d5db" strokeWidth={1} />
             <Bar dataKey="value" radius={[4, 4, 4, 4]} barSize={16}>

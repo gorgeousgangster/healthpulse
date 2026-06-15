@@ -1,3 +1,5 @@
+import { ShapTableExplainer as ShapTableExplainerCard } from './ShapExplainer';
+
 const LEVEL_CONFIG = {
   low: { color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', icon: '✓' },
   moderate: { color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200', icon: '!' },
@@ -66,7 +68,12 @@ export default function RiskResults({ data }) {
         </div>
       )}
 
-      {data.explanation && <ExplanationPanel explanation={data.explanation} />}
+      {data.explanation && (
+        <>
+          <ShapTableExplainerCard />
+          <ExplanationPanel explanation={data.explanation} />
+        </>
+      )}
     </div>
   );
 }
@@ -100,7 +107,7 @@ function ExplanationPanel({ explanation }) {
         <div key={key} className="mb-4 last:mb-0">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{key.replace('_', ' ')}</p>
           <div className="space-y-1.5">
-            {target.features?.slice(0, 5).map((feat, i) => (
+            {target.features?.filter(f => f.shap_value !== 0).map((feat, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="text-xs text-gray-600 w-32 truncate">{feat.display_name || feat.name}</span>
                 <div className="flex-1 flex items-center">

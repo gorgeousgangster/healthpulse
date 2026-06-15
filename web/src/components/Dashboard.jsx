@@ -5,7 +5,7 @@ import HealthForm from './HealthForm';
 import RiskResults from './RiskResults';
 import RadarChartPanel from './RadarChart';
 import ShapChart from './ShapChart';
-import ShapExplainer from './ShapExplainer';
+import ShapExplainer, { ShapChartExplainer, ShapTableExplainer } from './ShapExplainer';
 import BloodPressureChart from './BloodPressureChart';
 import BMIIndicator from './BMIIndicator';
 import LifestyleRadar from './LifestyleRadar';
@@ -104,9 +104,14 @@ export default function Dashboard() {
 
             {/* SHAP Explainer + Charts */}
             <ShapExplainer />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RadarChartPanel profile={lastPayload} />
-              {results.explanation && <ShapChart explanation={results.explanation} />}
+              {results.explanation && (
+                <div className="space-y-4">
+                  <ShapChartExplainer />
+                  <ShapChart explanation={results.explanation} />
+                </div>
+              )}
             </div>
 
             <Recommendations profile={lastPayload} riskData={results} />

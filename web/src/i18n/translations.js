@@ -56,6 +56,14 @@ export const translations = {
         numbersLabel: 'The numbers:',
         numbersText: 'Represent the magnitude of impact. Larger numbers mean that specific health metric played a bigger role in the AI\'s final decision.',
       },
+      chartExplainer: {
+        title: 'Understanding the Impact Chart',
+        text: 'This chart ranks your health metrics from most important (top) to least important (bottom). Bars extending to the RIGHT (Red) show metrics increasing your risk. Bars extending to the LEFT (Green) show metrics actively protecting and lowering your risk.',
+      },
+      tableExplainer: {
+        title: 'Understanding the Impact Scores',
+        text: 'The AI calculates your final risk score using a simple point system: Plus (+) / Red means the AI is adding risk points because this metric is out of the safe zone. Minus (−) / Green means the AI is deducting risk points because this metric is healthy or safe.',
+      },
     },
     recommendations: {
       title: 'Personalized Health Recommendations',
@@ -151,6 +159,14 @@ export const translations = {
         redText: 'Yếu tố rủi ro. Các chỉ số này đang đẩy điểm rủi ro của bạn lên cao hơn.',
         numbersLabel: 'Các con số:',
         numbersText: 'Thể hiện mức độ ảnh hưởng. Số càng lớn nghĩa là chỉ số sức khỏe đó đóng vai trò càng quan trọng trong quyết định cuối cùng của AI.',
+      },
+      chartExplainer: {
+        title: 'Hướng dẫn đọc biểu đồ tổng quan',
+        text: 'Biểu đồ này sắp xếp các chỉ số từ ảnh hưởng nhiều nhất (trên cùng) đến ít nhất (dưới cùng). Thanh lệch sang PHẢI (Đỏ) là yếu tố làm tăng rủi ro. Thanh lệch sang TRÁI (Xanh) là yếu tố bảo vệ giúp giảm rủi ro.',
+      },
+      tableExplainer: {
+        title: 'Ý nghĩa các con số tác động',
+        text: 'AI tính toán mức rủi ro bằng cách cộng hoặc trừ điểm: Dấu cộng (+) / Đỏ nghĩa là bị cộng thêm điểm phạt do chỉ số vượt ngưỡng an toàn. Dấu trừ (−) / Xanh nghĩa là được trừ bớt điểm nguy cơ nhờ chỉ số đạt trạng thái lành mạnh.',
       },
     },
     recommendations: {
