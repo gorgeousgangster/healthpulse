@@ -1,4 +1,7 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, status, Depends, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.auth.models import UserCreate, UserLogin, UserResponse, TokenResponse, TokenRefresh
@@ -13,6 +16,8 @@ from app.auth.config import settings
 from app.db.engine import get_db
 from app.rate_limit import limiter
 
+logger = logging.getLogger("uvicorn.error")
+
 router = APIRouter()
 
 
@@ -20,9 +25,12 @@ router = APIRouter()
 @limiter.limit("5/minute")
 def register(request: Request, data: UserCreate, db: Session = Depends(get_db)):
     try:
-        user = create_user(db, data.email, data.password, data.name)
+        user = create_user(db, data.email.strip(), data.password, data.name.strip())
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f"REGISTRATION DATABASE ERROR: {str(e)}")
+        return JSONResponse(status_code=500, content={"detail": f"Database error: {str(e)}"})
 
     return TokenResponse(
         access_token=create_access_token(user.id, user.email),
@@ -34,7 +42,7 @@ def register(request: Request, data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/auth/login", response_model=TokenResponse)
 @limiter.limit("10/minute")
 def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
-    user = get_user_by_email(db, data.email)
+    user = get_user_by_email(db, data.email.strip().lower())
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 

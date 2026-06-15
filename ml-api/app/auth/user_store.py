@@ -2,12 +2,15 @@
 PostgreSQL-backed user store using SQLAlchemy.
 """
 
+import logging
 import uuid
 
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.db.models import User
+
+logger = logging.getLogger("uvicorn.error")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -21,19 +24,25 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_user(db: Session, email: str, password: str, name: str) -> User:
-    existing = get_user_by_email(db, email)
+    existing = get_user_by_email(db, email.strip().lower())
     if existing:
         raise ValueError("User with this email already exists")
 
     user = User(
         id=str(uuid.uuid4()),
-        email=email.lower(),
-        name=name,
+        email=email.strip().lower(),
+        name=name.strip(),
         password_hash=hash_password(password),
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info(f"User registered successfully: {user.email}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"REGISTRATION DATABASE ERROR: {str(e)}")
+        raise
     return user
 
 

@@ -24,8 +24,8 @@ export default function AuthPage() {
     try {
       const endpoint = mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
       const payload = mode === 'login'
-        ? { email: form.email, password: form.password }
-        : { email: form.email, password: form.password, name: form.name };
+        ? { email: form.email.trim(), password: form.password.trim() }
+        : { email: form.email.trim(), password: form.password.trim(), name: form.name.trim() };
 
       const res = await axios.post(`${API_BASE}${endpoint}`, payload);
       const { access_token } = res.data;
@@ -36,6 +36,7 @@ export default function AuthPage() {
 
       login(access_token, meRes.data);
     } catch (err) {
+      console.error("Frontend Auth Error:", err.response?.data || err.message);
       setError(err.response?.data?.detail || t('auth.error'));
     } finally {
       setLoading(false);
