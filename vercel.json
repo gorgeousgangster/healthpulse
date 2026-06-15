@@ -1,0 +1,9 @@
+{
+  "experimentalServices": {
+    "ml-api": {
+      "root": "ml-api",
+      "entrypoint": "app.main:app",
+      "routePrefix": "/"
+    }
+  }
+}

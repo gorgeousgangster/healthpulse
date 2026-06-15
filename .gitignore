@@ -23,3 +23,4 @@ Thumbs.db
 
 # ML artifacts (rebuild on deploy)
 ml-api/app/trained_models/*.joblib
+.vercel
