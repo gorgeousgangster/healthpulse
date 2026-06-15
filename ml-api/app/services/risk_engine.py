@@ -11,6 +11,7 @@ from app.models.schemas import (
     RiskExplanation,
     TargetExplanation,
     FeatureExplanation,
+    ProjectionPoint,
 )
 from app.services.dataset_loader import FEATURES
 from app.services.explainer import explain_prediction
@@ -114,6 +115,65 @@ def _build_explanation(shap_result: dict) -> RiskExplanation | None:
     return RiskExplanation(**targets)
 
 
+def _compute_projections(profile: HealthProfile, model) -> list[ProjectionPoint]:
+    projections = []
+
+    for years in (5, 10):
+        age_future = min(profile.age + years, 120)
+        bmi_future = profile.bmi
+        bp_sys_future = profile.blood_pressure_systolic
+        bp_dia_future = profile.blood_pressure_diastolic
+        glucose_future = profile.glucose
+        cholesterol_future = profile.cholesterol
+
+        is_high_risk = (
+            profile.stress_level > 6
+            or profile.exercise_hours_weekly < 2.5
+            or profile.smoking
+        )
+
+        if is_high_risk:
+            annual_factor = years
+            bmi_future = min(profile.bmi + 0.3 * annual_factor, 55)
+            bp_sys_future = min(profile.blood_pressure_systolic + 1.5 * annual_factor, 240)
+            bp_dia_future = min(profile.blood_pressure_diastolic + 0.8 * annual_factor, 140)
+            glucose_future = min(profile.glucose + 1.2 * annual_factor, 400)
+            cholesterol_future = min(profile.cholesterol + 2.0 * annual_factor, 380)
+        else:
+            annual_factor = years
+            bp_sys_future = min(profile.blood_pressure_systolic + 0.5 * annual_factor, 240)
+            bp_dia_future = min(profile.blood_pressure_diastolic + 0.3 * annual_factor, 140)
+            glucose_future = min(profile.glucose + 0.4 * annual_factor, 400)
+
+        future_profile = HealthProfile(
+            age=age_future,
+            bmi=round(bmi_future, 1),
+            blood_pressure_systolic=int(bp_sys_future),
+            blood_pressure_diastolic=int(bp_dia_future),
+            cholesterol=round(cholesterol_future, 1),
+            glucose=round(glucose_future, 1),
+            smoking=profile.smoking,
+            alcohol_weekly_units=profile.alcohol_weekly_units,
+            exercise_hours_weekly=profile.exercise_hours_weekly,
+            sleep_hours_daily=profile.sleep_hours_daily,
+            stress_level=profile.stress_level,
+            family_history_heart_disease=profile.family_history_heart_disease,
+            family_history_diabetes=profile.family_history_diabetes,
+        )
+
+        features = profile_to_features(future_profile)
+        predictions = model.predict(features)[0]
+
+        projections.append(ProjectionPoint(
+            label=f"{years}_years",
+            cardiovascular_risk=round(float(np.clip(predictions[0], 0, 100)), 1),
+            diabetes_risk=round(float(np.clip(predictions[1], 0, 100)), 1),
+            mental_health_risk=round(float(np.clip(predictions[2], 0, 100)), 1),
+        ))
+
+    return projections
+
+
 def assess_risk(profile: HealthProfile, include_explanation: bool = True) -> RiskScore:
     model = get_model()
     features = profile_to_features(profile)
@@ -144,6 +204,12 @@ def assess_risk(profile: HealthProfile, include_explanation: bool = True) -> Ris
         except Exception as e:
             logger.error(f"SHAP explanation failed: {e}")
 
+    try:
+        projections = _compute_projections(profile, model)
+    except Exception as e:
+        logger.error(f"Projection calculation failed: {e}")
+        projections = None
+
     return RiskScore(
         overall_risk=round(overall, 1),
         cardiovascular_risk=round(cv_risk, 1),
@@ -152,4 +218,5 @@ def assess_risk(profile: HealthProfile, include_explanation: bool = True) -> Ris
         risk_level=level,
         contributing_factors=factors,
         explanation=explanation,
+        projections=projections,
     )

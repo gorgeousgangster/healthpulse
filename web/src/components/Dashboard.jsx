@@ -9,6 +9,7 @@ import ShapExplainer, { ShapChartExplainer, ShapTableExplainer } from './ShapExp
 import BloodPressureChart from './BloodPressureChart';
 import BMIIndicator from './BMIIndicator';
 import LifestyleRadar from './LifestyleRadar';
+import ProjectionChart from './ProjectionChart';
 import Recommendations from './Recommendations';
 import HistoryModal from './HistoryModal';
 import ErrorState from './ErrorState';
@@ -94,6 +95,11 @@ export default function Dashboard() {
                 {t('analytics.title')}
               </h2>
             </div>
+
+            {/* Future Projection Chart */}
+            {results.projections && (
+              <ProjectionChart currentRisks={results} projections={results.projections} />
+            )}
 
             {/* Medical Reference Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

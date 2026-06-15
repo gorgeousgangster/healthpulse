@@ -37,6 +37,13 @@ class RiskExplanation(BaseModel):
     mental_health: TargetExplanation | None = None
 
 
+class ProjectionPoint(BaseModel):
+    label: str
+    cardiovascular_risk: float
+    diabetes_risk: float
+    mental_health_risk: float
+
+
 class RiskScore(BaseModel):
     overall_risk: float = Field(description="0-100 risk score")
     cardiovascular_risk: float
@@ -47,6 +54,10 @@ class RiskScore(BaseModel):
     explanation: RiskExplanation | None = Field(
         default=None,
         description="SHAP-based feature importance breakdown per risk dimension",
+    )
+    projections: list[ProjectionPoint] | None = Field(
+        default=None,
+        description="5-year and 10-year risk projections based on current lifestyle trajectory",
     )
 
 
