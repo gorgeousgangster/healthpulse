@@ -2,11 +2,25 @@ import { useApp } from '../context/AppContext';
 import { ShapTableExplainer as ShapTableExplainerCard } from './ShapExplainer';
 
 const LEVEL_CONFIG = {
-  low: { color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', icon: '✓' },
-  moderate: { color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200', icon: '!' },
-  high: { color: 'orange', bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-200', icon: '!!' },
-  critical: { color: 'red', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200', icon: '!!!' },
+  low: { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
+  moderate: { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
+  high: { bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-200' },
+  critical: { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200' },
 };
+
+const DIMENSION_STYLES = {
+  cardiovascular: { dot: 'bg-red-400', border: 'border-red-100', headerBg: 'bg-red-50/60' },
+  diabetes: { dot: 'bg-amber-400', border: 'border-amber-100', headerBg: 'bg-amber-50/60' },
+  mental_health: { dot: 'bg-blue-400', border: 'border-blue-100', headerBg: 'bg-blue-50/60' },
+};
+
+function translateFeatureName(displayName, t) {
+  const translated = t(`featureNames.${displayName}`);
+  if (translated && translated !== `featureNames.${displayName}`) {
+    return translated;
+  }
+  return displayName;
+}
 
 export default function RiskResults({ data }) {
   const { t } = useApp();
@@ -17,6 +31,7 @@ export default function RiskResults({ data }) {
 
   return (
     <div className="space-y-6">
+      {/* Main Risk Score Card */}
       <div className={`card ${config.bg} border-0`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">{t('results.title')}</h2>
@@ -52,6 +67,7 @@ export default function RiskResults({ data }) {
         </div>
       </div>
 
+      {/* Contributing Factors */}
       {data.contributing_factors && data.contributing_factors.length > 0 && (
         <div className="card">
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -71,10 +87,11 @@ export default function RiskResults({ data }) {
         </div>
       )}
 
+      {/* SHAP Explainability - 3 Column Grid Cards with Pill Badges */}
       {data.explanation && (
         <>
           <ShapTableExplainerCard />
-          <ExplanationPanel explanation={data.explanation} />
+          <ShapGridCards explanation={data.explanation} t={t} />
         </>
       )}
     </div>
@@ -94,9 +111,8 @@ function RiskBar({ label, value }) {
   );
 }
 
-function ExplanationPanel({ explanation }) {
-  const { t } = useApp();
-  const targets = Object.entries(explanation).filter(([_, v]) => v);
+function ShapGridCards({ explanation, t }) {
+  const targets = Object.entries(explanation).filter(([_, v]) => v && v.features);
   if (targets.length === 0) return null;
 
   const dimensionLabels = {
@@ -115,31 +131,40 @@ function ExplanationPanel({ explanation }) {
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {targets.map(([key, target]) => (
-          <div key={key} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
-            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${key === 'cardiovascular' ? 'bg-red-400' : key === 'diabetes' ? 'bg-amber-400' : 'bg-blue-400'}`} />
-              {dimensionLabels[key] || key.replace('_', ' ')}
-            </p>
-            <div className="space-y-2">
-              {target.features?.filter(f => f.shap_value !== 0).sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value)).map((feat, i) => {
-                const featureName = t(`featureNames.${feat.name}`) !== `featureNames.${feat.name}` ? t(`featureNames.${feat.name}`) : (feat.display_name || feat.name);
-                return (
-                  <div key={i} className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-gray-600 truncate flex-1">{featureName}</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      feat.direction === 'risk'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {feat.direction === 'risk' ? '+' : '−'}{Math.abs(feat.shap_value).toFixed(2)}
-                    </span>
-                  </div>
-                );
-              })}
+        {targets.map(([key, target]) => {
+          const styles = DIMENSION_STYLES[key] || DIMENSION_STYLES.cardiovascular;
+          const features = target.features
+            ?.filter(f => f.shap_value !== 0)
+            .sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value));
+
+          return (
+            <div key={key} className={`rounded-xl border ${styles.border} overflow-hidden`}>
+              <div className={`px-4 py-2.5 ${styles.headerBg} border-b ${styles.border}`}>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${styles.dot}`} />
+                  {dimensionLabels[key] || key}
+                </p>
+              </div>
+              <div className="p-3 space-y-2">
+                {features?.map((feat, i) => {
+                  const featureName = translateFeatureName(feat.display_name || feat.name, t);
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600 truncate flex-1">{featureName}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${
+                        feat.direction === 'risk'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {feat.direction === 'risk' ? '+' : '−'}{Math.abs(feat.shap_value).toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -2,11 +2,33 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useApp } from '../context/AppContext';
 
-const TAB_CONFIG = {
-  cardiovascular: { label: 'shapTabs.cardiovascular', color: 'red', dot: 'bg-red-400', active: 'bg-red-50 text-red-700 border-red-200', hover: 'hover:bg-red-50/50' },
-  diabetes: { label: 'shapTabs.diabetes', color: 'amber', dot: 'bg-amber-400', active: 'bg-amber-50 text-amber-700 border-amber-200', hover: 'hover:bg-amber-50/50' },
-  mental_health: { label: 'shapTabs.mentalHealth', color: 'blue', dot: 'bg-blue-400', active: 'bg-blue-50 text-blue-700 border-blue-200', hover: 'hover:bg-blue-50/50' },
+const TAB_KEYS = ['cardiovascular', 'diabetes', 'mental_health'];
+
+const TAB_STYLES = {
+  cardiovascular: {
+    dot: 'bg-red-500',
+    activeBtn: 'bg-red-50 text-red-700 border-red-200 shadow-sm',
+    hoverBtn: 'hover:bg-red-50/60',
+  },
+  diabetes: {
+    dot: 'bg-amber-500',
+    activeBtn: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
+    hoverBtn: 'hover:bg-amber-50/60',
+  },
+  mental_health: {
+    dot: 'bg-blue-500',
+    activeBtn: 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm',
+    hoverBtn: 'hover:bg-blue-50/60',
+  },
 };
+
+function translateFeatureName(displayName, t) {
+  const translated = t(`featureNames.${displayName}`);
+  if (translated && translated !== `featureNames.${displayName}`) {
+    return translated;
+  }
+  return displayName;
+}
 
 export default function ShapChart({ explanation }) {
   const { t } = useApp();
@@ -14,11 +36,17 @@ export default function ShapChart({ explanation }) {
 
   if (!explanation) return null;
 
-  const targets = Object.entries(explanation).filter(([_, v]) => v && v.features);
-  if (targets.length === 0) return null;
+  const availableTabs = TAB_KEYS.filter(k => explanation[k] && explanation[k].features);
+  if (availableTabs.length === 0) return null;
 
-  const currentTab = activeTab || targets[0]?.[0];
+  const currentTab = activeTab && availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
   const currentTarget = explanation[currentTab];
+
+  const tabLabels = {
+    cardiovascular: t('shapTabs.cardiovascular'),
+    diabetes: t('shapTabs.diabetes'),
+    mental_health: t('shapTabs.mentalHealth'),
+  };
 
   return (
     <div className="card">
@@ -30,39 +58,39 @@ export default function ShapChart({ explanation }) {
       </h3>
       <p className="text-xs text-gray-400 mb-4">{t('shapChart.subtitle')}</p>
 
-      {/* Tabbed Interface */}
-      <div className="flex gap-2 mb-5 border-b border-gray-100 pb-3">
-        {targets.map(([key]) => {
-          const cfg = TAB_CONFIG[key];
+      {/* Tab Buttons */}
+      <div className="flex gap-2 mb-5">
+        {availableTabs.map(key => {
+          const styles = TAB_STYLES[key];
           const isActive = key === currentTab;
           return (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                isActive ? cfg.active : `border-transparent text-gray-500 ${cfg.hover}`
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                isActive
+                  ? styles.activeBtn
+                  : `border-gray-200 text-gray-500 ${styles.hoverBtn}`
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-              {t(cfg.label)}
+              <span className={`w-2.5 h-2.5 rounded-full ${styles.dot}`} />
+              {tabLabels[key]}
             </button>
           );
         })}
       </div>
 
-      {/* Chart for Active Tab */}
-      {currentTarget && <ShapDimension target={currentTarget} />}
+      {/* Active Tab Chart */}
+      {currentTarget && <TabChart target={currentTarget} t={t} />}
     </div>
   );
 }
 
-function ShapDimension({ target }) {
-  const { t } = useApp();
-
+function TabChart({ target, t }) {
   const data = target.features
     .filter(f => f.shap_value !== 0)
     .map(f => ({
-      name: t(`featureNames.${f.name}`) !== `featureNames.${f.name}` ? t(`featureNames.${f.name}`) : (f.display_name || f.name),
+      name: translateFeatureName(f.display_name || f.name, t),
       value: f.direction === 'risk' ? Math.abs(f.shap_value) : -Math.abs(f.shap_value),
       direction: f.direction,
     }))
@@ -74,13 +102,24 @@ function ShapDimension({ target }) {
   return (
     <div className="w-full" style={{ height: `${chartHeight}px` }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 110 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" opacity={0.7} />
-          <XAxis type="number" domain={[-maxVal * 1.2, maxVal * 1.2]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={v => v.toFixed(2)} />
-          <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#374151' }} width={105} interval={0} />
+        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 120 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" opacity={0.6} />
+          <XAxis
+            type="number"
+            domain={[-maxVal * 1.2, maxVal * 1.2]}
+            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tickFormatter={v => v.toFixed(2)}
+          />
+          <YAxis
+            type="category"
+            dataKey="name"
+            tick={{ fontSize: 11, fill: '#374151' }}
+            width={115}
+            interval={0}
+          />
           <Tooltip
             formatter={(value) => [`${value > 0 ? '+' : ''}${value.toFixed(3)}`, 'SHAP']}
-            contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+            contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
           />
           <ReferenceLine x={0} stroke="#d1d5db" strokeWidth={1} />
           <Bar dataKey="value" radius={[6, 6, 6, 6]} barSize={14}>
