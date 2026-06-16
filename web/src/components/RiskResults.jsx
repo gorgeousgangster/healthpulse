@@ -150,7 +150,7 @@ function ShapGridCards({ explanation, t }) {
                   const featureName = translateFeatureName(feat.display_name || feat.name, t);
                   return (
                     <div key={i} className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-gray-600 truncate flex-1">{featureName}</span>
+                      <span className="text-xs text-gray-600 flex-1">{featureName}</span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${
                         feat.direction === 'risk'
                           ? 'bg-red-100 text-red-700'

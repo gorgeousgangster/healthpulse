@@ -11,6 +11,7 @@ import BMIIndicator from './BMIIndicator';
 import LifestyleRadar from './LifestyleRadar';
 import ProjectionChart from './ProjectionChart';
 import Recommendations from './Recommendations';
+import InsightCards from './InsightCards';
 import HistoryModal from './HistoryModal';
 import ErrorState from './ErrorState';
 import { predictRisk, fetchHistory } from '../api/client';
@@ -74,6 +75,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3">
             <HealthForm onSubmit={handleAssess} isLoading={state === 'loading'} />
+            {state === 'success' && results && <InsightCards results={results} />}
           </div>
           <div className="lg:col-span-2 space-y-6">
             {state === 'idle' && <IdleState />}

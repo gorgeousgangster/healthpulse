@@ -59,7 +59,7 @@ export default function ShapChart({ explanation }) {
       <p className="text-xs text-gray-400 mb-4">{t('shapChart.subtitle')}</p>
 
       {/* Tab Buttons */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-5 justify-center">
         {availableTabs.map(key => {
           const styles = TAB_STYLES[key];
           const isActive = key === currentTab;
@@ -81,7 +81,11 @@ export default function ShapChart({ explanation }) {
       </div>
 
       {/* Active Tab Chart */}
-      {currentTarget && <TabChart target={currentTarget} t={t} />}
+      <div className="flex items-center justify-center">
+        <div className="w-full max-w-2xl">
+          {currentTarget && <TabChart target={currentTarget} t={t} />}
+        </div>
+      </div>
     </div>
   );
 }
