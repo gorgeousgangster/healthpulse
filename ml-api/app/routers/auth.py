@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from fastapi.responses import JSONResponse
@@ -21,11 +22,18 @@ logger = logging.getLogger("uvicorn.error")
 router = APIRouter()
 
 
+PASSWORD_REGEX = re.compile(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$')
+
+
 @router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def register(request: Request, data: UserCreate, db: Session = Depends(get_db)):
+    password = str(data.password).strip()
+    if not PASSWORD_REGEX.match(password):
+        return JSONResponse(status_code=400, content={"detail": "Password must contain both letters and numbers"})
+
     try:
-        user = create_user(db, data.email.strip(), data.password, data.name.strip())
+        user = create_user(db, data.email.strip(), password, data.name.strip())
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:

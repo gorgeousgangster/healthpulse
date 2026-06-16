@@ -4,16 +4,20 @@ import axios from 'axios';
 
 const API_BASE = 'https://healthpulse-production-b94f.up.railway.app';
 
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+
 export default function AuthPage() {
   const { t, login } = useApp();
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     setError('');
+    if (e.target.name === 'password') setPasswordError('');
   }
 
   async function handleSubmit(e) {
@@ -21,11 +25,21 @@ export default function AuthPage() {
     setLoading(true);
     setError('');
 
+    const trimmedPassword = String(form.password).trim();
+    const trimmedEmail = String(form.email).trim();
+    const trimmedName = String(form.name).trim();
+
+    if (mode === 'register' && !PASSWORD_REGEX.test(trimmedPassword)) {
+      setPasswordError('Password must be at least 6 characters and contain both letters and numbers / Mật khẩu phải có ít nhất 6 ký tự, bao gồm cả chữ và số');
+      setLoading(false);
+      return;
+    }
+
     try {
       const endpoint = mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
       const payload = mode === 'login'
-        ? { email: form.email.trim(), password: form.password.trim() }
-        : { email: form.email.trim(), password: form.password.trim(), name: form.name.trim() };
+        ? { email: trimmedEmail, password: trimmedPassword }
+        : { email: trimmedEmail, password: trimmedPassword, name: trimmedName };
 
       const res = await axios.post(`${API_BASE}${endpoint}`, payload);
       const { access_token } = res.data;
@@ -84,8 +98,17 @@ export default function AuthPage() {
             <label className="label">{t('auth.password')}</label>
             <input
               type="password" name="password" value={form.password} onChange={handleChange}
-              className="input-field" placeholder="••••••••" required minLength={6}
+              className={`input-field ${passwordError ? 'ring-2 ring-red-300 border-red-300' : ''}`}
+              placeholder="••••••••" required minLength={6}
             />
+            {mode === 'register' && (
+              <p className="text-xs text-gray-400 mt-1">
+                Password must be at least 6 characters and contain both letters and numbers / Mật khẩu phải có ít nhất 6 ký tự, bao gồm cả chữ và số
+              </p>
+            )}
+            {passwordError && (
+              <p className="text-xs text-red-600 mt-1 font-medium">{passwordError}</p>
+            )}
           </div>
 
           {error && (
